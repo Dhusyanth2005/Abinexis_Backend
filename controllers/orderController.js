@@ -164,7 +164,7 @@ exports.paymentVerification = async (req, res) => {
 
     // Stock is already reduced in createOrder for Razorpay after successful payment
     // Redirect to success page
-    res.redirect(`http://localhost:5173/paymentSuccess?reference=${razorpay_payment_id}`);
+    res.redirect(`https://abinexis-frontend.vercel.app/paymentSuccess?reference=${razorpay_payment_id}`);
   } catch (error) {
     console.error('Error verifying payment:', error);
     res.status(500).json({
