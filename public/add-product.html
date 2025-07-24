@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Product</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f4; }
+    .product-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 400px; }
+    input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+    textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; resize: vertical; }
+    button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #218838; }
+    .error { color: red; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="product-container">
+    <h2>Add Product</h2>
+    <form id="productForm" enctype="multipart/form-data">
+      <input type="text" id="name" placeholder="Product Name" required>
+      <textarea id="description" placeholder="Description" required></textarea>
+      <input type="number" id="price" placeholder="Price" step="0.01" required>
+      <input type="number" id="discountPrice" placeholder="Discount Price (optional)" step="0.01">
+      <input type="text" id="brand" placeholder="Brand" required>
+      <input type="number" id="countInStock" placeholder="Stock Quantity" required>
+      <select id="category" required>
+        <option value="">Select Category</option>
+        <option value="Kitchen">Kitchen</option>
+        <option value="Health">Health</option>
+        <option value="Fashion">Fashion</option>
+        <option value="Beauty">Beauty</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Fitness">Fitness</option>
+        <option value="Spiritual">Spiritual</option>
+        <option value="Kids">Kids</option>
+        <option value="Pets">Pets</option>
+        <option value="Stationery">Stationery</option>
+      </select>
+      <select id="subCategory" required>
+        <option value="">Select Subcategory</option>
+        <option value="Appliances">Appliances</option>
+        <option value="Cookware">Cookware</option>
+        <option value="Utensils">Utensils</option>
+        <option value="Vitamins">Vitamins</option>
+        <option value="Supplements">Supplements</option>
+        <option value="Medical Devices">Medical Devices</option>
+        <option value="Clothing">Clothing</option>
+        <option value="Footwear">Footwear</option>
+        <option value="Accessories">Accessories</option>
+        <option value="Skincare">Skincare</option>
+        <option value="Makeup">Makeup</option>
+        <option value="Haircare">Haircare</option>
+        <option value="Gadgets">Gadgets</option>
+        <option value="Accessories">Accessories</option>
+        <option value="Wearables">Wearables</option>
+        <option value="Equipment">Equipment</option>
+        <option value="Apparel">Apparel</option>
+        <option value="Books">Books</option>
+        <option value="Incense">Incense</option>
+        <option value="Statues">Statues</option>
+        <option value="Jewelry">Jewelry</option>
+        <option value="Toys">Toys</option>
+        <option value="Clothing">Clothing</option>
+        <option value="Food">Food</option>
+        <option value="Grooming">Grooming</option>
+        <option value="Pens">Pens</option>
+        <option value="Notebooks">Notebooks</option>
+        <option value="Office Supplies">Office Supplies</option>
+      </select>
+      <input type="file" id="images" name="images" multiple accept="image/*">
+      <button type="submit">Add Product</button>
+    </form>
+    <div id="error" class="error"></div>
+    <div id="success" style="color: green; margin-top: 10px;"></div>
+  </div>
+
+  <script>
+    document.getElementById('productForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        document.getElementById('error').textContent = 'Please login first.';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('name', document.getElementById('name').value);
+      formData.append('description', document.getElementById('description').value);
+      formData.append('price', document.getElementById('price').value);
+      const discountPrice = document.getElementById('discountPrice').value;
+      if (discountPrice) formData.append('discountPrice', discountPrice);
+      formData.append('brand', document.getElementById('brand').value);
+      formData.append('countInStock', document.getElementById('countInStock').value);
+      formData.append('category', document.getElementById('category').value);
+      formData.append('subCategory', document.getElementById('subCategory').value);
+      const images = document.getElementById('images').files;
+      for (let i = 0; i < images.length; i++) {
+        formData.append('images', images[i]);
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/api/products', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData,
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById('success').textContent = 'Product added successfully!';
+          document.getElementById('productForm').reset();
+          document.getElementById('error').textContent = '';
+        } else {
+          document.getElementById('error').textContent = data.message || 'Failed to add product';
+          document.getElementById('success').textContent = '';
+        }
+      } catch (error) {
+        document.getElementById('error').textContent = 'An error occurred. Please try again.';
+        document.getElementById('success').textContent = '';
+      }
+    });
+  </script>
+</body>
+</html>
