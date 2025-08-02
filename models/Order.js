@@ -64,7 +64,14 @@ const orderSchema = new mongoose.Schema({
   },
   isPaid: { type: Boolean, default: false },
   isDelivered: { type: Boolean, default: false },
-  deliveredAt: { type: Date },
+  statusTimestamps: {
+    processedAt: { type: Date },
+    shippedAt: { type: Date },
+    outForDeliveryAt: { type: Date },
+    deliveredAt: { type: Date },
+    cancelledAt: { type: Date }
+  },
+  cancelReason: { type: String },
   createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 

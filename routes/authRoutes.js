@@ -1,6 +1,6 @@
 const express = require('express');
 const { protect, admin } = require('../middleware/authMiddleware');
-const { register, login, updateUser, setAdmin, verifyOTP,getUser,changePassword} = require('../controllers/authController');
+const { register, login, updateUser, setAdmin, verifyOTP,getUser,changePassword,getUserCount} = require('../controllers/authController');
 const passport = require('passport');
 
 const router = express.Router();
@@ -17,7 +17,7 @@ router.put('/update', protect, updateUser);
 router.get('/update', protect, getUser);
 // Admin route
 router.post('/set-admin', protect, admin, setAdmin);
-
+router.get('/user-count', protect, getUserCount);
 // Google OAuth routes
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', { session: false }), (req, res) => {

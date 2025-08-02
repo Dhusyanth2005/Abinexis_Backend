@@ -1,8 +1,81 @@
 const Product = require('../models/Product');
 const mongoose = require('mongoose');
+const cloudinary = require('../config/cloudinary');
 
+const updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: 'Only admins can update products' });
+    }
+
+    const { name, description, shippingCost, brand, category, subCategory, filters, features, countInStock, existingImages } = req.body;
+
+    // Update product fields
+    product.name = name || product.name;
+    product.description = description || product.description;
+    product.shippingCost = shippingCost !== undefined ? Number(shippingCost) : product.shippingCost;
+    product.brand = brand !== undefined ? brand : product.brand;
+    product.category = category || product.category;
+    product.subCategory = subCategory || product.subCategory;
+    product.filters = filters ? JSON.parse(filters) : product.filters;
+    product.features = features ? JSON.parse(features) : product.features;
+    product.countInStock = countInStock !== undefined ? Number(countInStock) : product.countInStock;
+
+    // Handle images
+    let images = [];
+    
+    // Parse existingImages (ensure it's an array)
+    const existingImagesArray = existingImages
+      ? Array.isArray(existingImages)
+        ? existingImages
+        : typeof existingImages === 'string'
+        ? JSON.parse(existingImages)
+        : [existingImages]
+      : [];
+
+    // Add existing images that are still valid
+    images = existingImagesArray.filter(url => typeof url === 'string' && url.trim() !== '');
+
+    // Handle new image uploads
+    if (req.files && req.files.images) {
+      const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+      const uploadPromises = files.map(file => {
+        return new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            { folder: 'products' },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result.secure_url);
+            }
+          ).end(file.data);
+        });
+      });
+      const uploadedImages = await Promise.all(uploadPromises);
+      images = [...images, ...uploadedImages]; // Merge existing and new images
+    }
+
+    // Update product images only if there are changes
+    product.images = images.length > 0 ? images : product.images;
+
+    await product.save();
+    const productWithPrice = {
+      ...product.toObject(),
+      effectivePrice: product.effectivePrice ? product.effectivePrice({}) : 0
+    };
+    res.json(productWithPrice);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ message: 'Error updating product', error: error.message });
+  }
+};
+
+// Include other controller functions as needed (unchanged from your original code)
 const getProducts = async (req, res) => {
-  const { category, subCategory, brand, search } = req.query;
+  const { category, subCategory, brand, search, sort, limit } = req.query;
   const query = {};
   if (category) query.category = { $regex: category, $options: 'i' };
   if (subCategory) query.subCategory = { $regex: subCategory, $options: 'i' };
@@ -10,7 +83,10 @@ const getProducts = async (req, res) => {
   if (search) query.$text = { $search: search };
 
   try {
-    const products = await Product.find(query).lean();
+    let productsQuery = Product.find(query).lean();
+    if (sort) productsQuery = productsQuery.sort(sort); // e.g., sort=-createdAt for descending
+    if (limit) productsQuery = productsQuery.limit(Number(limit)); // e.g., limit=4
+    const products = await productsQuery;
     const productsWithPrice = products.map(product => ({
       ...product,
       effectivePrice: product.effectivePrice ? product.effectivePrice({}) : 0
@@ -20,7 +96,6 @@ const getProducts = async (req, res) => {
     res.status(500).json({ message: 'Error fetching products', error: error.message });
   }
 };
-
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -86,54 +161,6 @@ const createProduct = async (req, res) => {
     res.status(201).json(productWithPrice);
   } catch (error) {
     res.status(500).json({ message: 'Error creating product', error: error.message });
-  }
-};
-
-const updateProduct = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: 'Only admins can update products' });
-    }
-    const { name, description, shippingCost, brand, category, subCategory, filters, features, countInStock } = req.body;
-    product.name = name || product.name;
-    product.description = description || product.description;
-    product.shippingCost = shippingCost !== undefined ? Number(shippingCost) : product.shippingCost;
-    product.brand = brand !== undefined ? brand : product.brand;
-    product.category = category || product.category;
-    product.subCategory = subCategory || product.subCategory;
-    product.filters = filters ? JSON.parse(filters) : product.filters;
-    product.features = features ? JSON.parse(features) : product.features;
-    product.countInStock = countInStock !== undefined ? Number(countInStock) : product.countInStock;
-
-    if (req.files && req.files.images) {
-      const images = [];
-      const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
-      const uploadPromises = files.map(file => {
-        return new Promise((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            { folder: 'products' },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result.secure_url);
-            }
-          ).end(file.data);
-        });
-      });
-      const uploadedImages = await Promise.all(uploadPromises);
-      product.images = uploadedImages;
-    }
-    await product.save();
-    const productWithPrice = {
-      ...product.toObject(),
-      effectivePrice: product.effectivePrice ? product.effectivePrice({}) : 0
-    };
-    res.json(productWithPrice);
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating product', error: error.message });
   }
 };
 
@@ -318,7 +345,6 @@ const searchProducts = async (req, res) => {
   }
 
   try {
-    // Search products by name, description, brand, category, or subCategory
     const products = await Product.find({
       $or: [
         { name: { $regex: query, $options: 'i' } },
@@ -347,47 +373,17 @@ const searchProducts = async (req, res) => {
     res.status(500).json({ message: 'Error searching products', error: error.message });
   }
 };
-const toggleWishlist = async (req, res) => {
+const getProductCount = async (req, res) => {
+  console.log('getProductCount called, req.user:', req.user);
   try {
-    const { id } = req.params;
-    const { isWishlist } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid product ID' });
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ message: 'Only admins can access product count' });
     }
-
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    product.isWishlist = isWishlist !== undefined ? isWishlist : !product.isWishlist;
-    await product.save();
-
-    const productWithPrice = {
-      ...product.toObject(),
-      effectivePrice: product.effectivePrice ? product.effectivePrice({}) : 0
-    };
-    res.json(productWithPrice);
+    const totalProducts = await Product.countDocuments();
+    res.json({ totalProducts });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating wishlist status', error: error.message });
-  }
-};
-
-const getWishlistProducts = async (req, res) => {
-  try {
-    const products = await Product.find({ isWishlist: true }).lean();
-    const productsWithPrice = products.map(product => ({
-      ...product,
-      effectivePrice: product.effectivePrice ? product.effectivePrice({}) : 0
-    }));
-    if (products.length > 0) {
-      res.json(productsWithPrice);
-    } else {
-      res.status(404).json({ message: 'No wishlist products found' });
-    }
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching wishlist products', error: error.message });
+    console.error('Error in getProductCount:', error);
+    res.status(500).json({ message: 'Error fetching product count', error: error.message });
   }
 };
 
@@ -401,6 +397,5 @@ module.exports = {
   getFilters,
   getPriceDetails,
   searchProducts,
-  toggleWishlist,
-  getWishlistProducts
+  getProductCount
 };

@@ -10,43 +10,23 @@ const {
   getFilters,
   getPriceDetails,
   searchProducts,
-  toggleWishlist,
-  getWishlistProducts
+  getProductCount,
 } = require('../controllers/productController');
 
 const router = express.Router();
 
-// Search products by query (name, description, brand, category, or subcategory)
+// Specific routes before dynamic routes
 router.get('/search', searchProducts);
-
-// Get all products with optional query filters (category, subCategory, brand, search)
+router.get('/filters', getFilters);
+router.get('/filter', filterProducts);
+router.get('/product-count', protect, admin, getProductCount); // Explicit route
 router.get('/', getProducts);
 
-// Get available filters (categories, subCategories, brands, filter values)
-router.get('/filters', getFilters);
-
-// Filter products by category, subCategory, brand, and specific filter values
-router.get('/filter', filterProducts);
-
-// Get wishlist products
-router.get('/wishlist', protect, getWishlistProducts);
-
-// Get a single product by ID
-router.get('/:id', getProductById);
-
-// Get detailed price breakdown for a product with specific filter selections
+// Dynamic routes (after specific routes)
 router.get('/:id/price-details', getPriceDetails);
-
-// Create a new product (admin only)
+router.get('/:id', getProductById);
 router.post('/', protect, admin, createProduct);
-
-// Update a product (admin only)
 router.put('/:id', protect, admin, updateProduct);
-
-// Toggle wishlist status for a product
-router.put('/:id/wishlist', protect, toggleWishlist);
-
-// Delete a product (admin only)
 router.delete('/:id', protect, admin, deleteProduct);
 
 module.exports = router;

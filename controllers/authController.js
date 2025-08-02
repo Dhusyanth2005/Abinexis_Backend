@@ -249,4 +249,19 @@ const changePassword = async (req, res) => {
   await user.save();
   res.json({ message: 'Password changed successfully' });
 };
-module.exports = { register, login, updateUser, setAdmin, verifyOTP,getUser,changePassword};
+const getUserCount = async (req, res) => {
+  try {
+    // Verify if the requester is an admin
+    const adminUser = await User.findById(req.user.id);
+    if (!adminUser || !adminUser.isAdmin) {
+      return res.status(403).json({ message: 'Only admins can access user count' });
+    }
+
+    const totalUsers = await User.countDocuments();
+    res.json({ totalUsers });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error while fetching user count' });
+  }
+};
+module.exports = { register, login, updateUser, setAdmin, verifyOTP,getUser,changePassword, getUserCount };

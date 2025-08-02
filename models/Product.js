@@ -31,7 +31,6 @@ const productSchema = new mongoose.Schema({
       'Stationery'
     ]
   },
-  isWishlist: { type: Boolean, default: false }, 
   subCategory: { type: String, required: true }, // e.g., "T-Shirts", "Mobile"
   filters: [filterSchema], // Dynamic filters like size, color, RAM, etc.
   features: [{ type: String }], // Array of feature descriptions added by admin
