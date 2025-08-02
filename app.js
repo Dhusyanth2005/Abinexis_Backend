@@ -17,7 +17,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],// Allow requests from your frontend
+  origin: ['http://localhost:5173', 'http://localhost:3000','https://admin-abinexis.vercel.app','https://abinexis.vercel.app'],// Allow requests from your frontend
   credentials: true, // Allow cookies or authorization headers
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Explicitly allow methods
 }));
