@@ -268,6 +268,18 @@ exports.updateOrderStatus = async (req, res) => {
         case 'cancelled':
           order.statusTimestamps.cancelledAt = now;
           break;
+        case 'return accepted':
+          order.statusTimestamps.returnAcceptedAt = now;
+          break;
+        case 'returned':
+          order.statusTimestamps.returnedAt = now;
+          break;
+        case 'refund accepted':
+          order.statusTimestamps.refundAcceptedAt = now;
+          break;
+        case 'refunded':
+          order.statusTimestamps.refundedAt = now;
+          break;  
       }
     }
 

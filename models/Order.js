@@ -59,7 +59,7 @@ const orderSchema = new mongoose.Schema({
   },
   orderStatus: {
     type: String,
-    enum: ['processing', 'shipped','out of delivery','delivered', 'cancelled'],
+    enum: ['processing', 'shipped', 'out of delivery', 'delivered', 'cancelled', 'return accepted', 'returned', 'refund accepted', 'refunded'],
     default: 'processing'
   },
   isPaid: { type: Boolean, default: false },
@@ -69,7 +69,11 @@ const orderSchema = new mongoose.Schema({
     shippedAt: { type: Date },
     outForDeliveryAt: { type: Date },
     deliveredAt: { type: Date },
-    cancelledAt: { type: Date }
+    cancelledAt: { type: Date },
+    returnAcceptedAt: { type: Date },
+    returnedAt: { type: Date },
+    refundAcceptedAt: { type: Date },
+    refundedAt: { type: Date }
   },
   cancelReason: { type: String },
   createdAt: { type: Date, default: Date.now }
