@@ -20,15 +20,290 @@ let otpStore = {};
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
 };
+    
+const sendOTP = async (email, otp, userName = 'User') => {
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Email Verification</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Arial', sans-serif;
+                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                padding: 20px;
+            }
+            
+            .email-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 20px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #52B69A 0%, #34A0A4 50%, #168AAD 100%);
+                padding: 40px 30px;
+                text-align: center;
+                position: relative;
+            }
+            
+            .header::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><radialGradient id="a" cx="50%" cy="0%" r="100%"><stop offset="0%" stop-color="white" stop-opacity="0.1"/><stop offset="100%" stop-color="white" stop-opacity="0"/></radialGradient></defs><rect width="100" height="20" fill="url(%23a)"/></svg>');
+                opacity: 0.3;
+            }
+            
+            .logo {
+                width: 80px;
+                height: 80px;
+                background: url('https://res.cloudinary.com/dxosnlbx8/image/upload/v1756961824/abinexis_fernwt.jpg') no-repeat center/cover;
+                border-radius: 50%;
+                margin: 0 auto 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                backdrop-filter: blur(10px);
+                position: relative;
+                z-index: 1;
+            }
+            
+            .logo svg {
+                width: 40px;
+                height: 40px;
+                fill: white;
+            }
+            
+            .header h1 {
+                color: white;
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 10px;
+                position: relative;
+                z-index: 1;
+            }
+            
+            .header p {
+                color: rgba(255,255,255,0.9);
+                font-size: 16px;
+                position: relative;
+                z-index: 1;
+            }
+            
+            .content {
+                padding: 50px 30px;
+                text-align: center;
+            }
+            
+            .greeting {
+                font-size: 24px;
+                color: #333;
+                margin-bottom: 20px;
+                font-weight: 600;
+            }
+            
+            .message {
+                font-size: 16px;
+                color: #666;
+                line-height: 1.6;
+                margin-bottom: 40px;
+            }
+            
+            .otp-container {
+                background: linear-gradient(135deg, #f8f9ff 0%, #e8f4f8 100%);
+                border: 2px dashed #52B69A;
+                border-radius: 15px;
+                padding: 30px;
+                margin: 30px 0;
+                position: relative;
+            }
+            
+            .otp-label {
+                font-size: 14px;
+                color: #666;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 10px;
+                font-weight: 600;
+            }
+            
+            .otp-code {
+                font-size: 36px;
+                font-weight: 800;
+                color: #168AAD;
+                letter-spacing: 8px;
+                margin: 15px 0;
+                text-shadow: 0 2px 4px rgba(22, 138, 173, 0.2);
+            }
+            
+            .timer {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                color: #e74c3c;
+                font-size: 14px;
+                font-weight: 600;
+                margin-top: 20px;
+            }
+            
+            .timer svg {
+                width: 16px;
+                height: 16px;
+                fill: #e74c3c;
+            }
+            
+            .security-note {
+                background: rgba(255, 193, 7, 0.1);
+                border-left: 4px solid #ffc107;
+                padding: 20px;
+                margin: 30px 0;
+                border-radius: 0 10px 10px 0;
+            }
+            
+            .security-note h3 {
+                color: #856404;
+                font-size: 16px;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .security-note p {
+                color: #856404;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            
+            .footer {
+                background: #f8f9fa;
+                padding: 30px;
+                text-align: center;
+                border-top: 1px solid #e9ecef;
+            }
+            
+            .footer p {
+                color: #666;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+            
+            @media (max-width: 600px) {
+                .email-container {
+                    margin: 10px;
+                    border-radius: 15px;
+                }
+                
+                .header {
+                    padding: 30px 20px;
+                }
+                
+                .content {
+                    padding: 30px 20px;
+                }
+                
+                .otp-code {
+                    font-size: 28px;
+                    letter-spacing: 4px;
+                }
+                
+                .greeting {
+                    font-size: 20px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="header">
+                <div class="logo">
+                    
+                </div>
+                <h1>Email Verification</h1>
+                <p>Secure your account with our verification system</p>
+            </div>
+            
+            <div class="content">
+                <div class="greeting">Hello ${userName}! 👋</div>
+                
+                <p class="message">
+                    We're excited to have you on board! To complete your registration and secure your account, 
+                    please verify your email address using the OTP code below.
+                </p>
+                
+                <div class="otp-container">
+                    <div class="otp-label">Your Verification Code</div>
+                    <div class="otp-code">${otp}</div>
+                    <div class="timer">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12,6 12,12 16,14"/>
+                        </svg>
+                        Valid for 10 minutes only
+                    </div>
+                </div>
+                
+                <div class="security-note">
+                    <h3>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#856404">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        Security Notice
+                    </h3>
+                    <p>
+                        For your security, never share this code with anyone. Our team will never ask for your OTP. 
+                        If you didn't request this verification, please ignore this email.
+                    </p>
+                </div>
+                
+                <p class="message">
+                    If you have any questions or need assistance, don't hesitate to contact our support team.
+                </p>
+            </div>
+            
+            <div class="footer">
+                <p>
+                    This email was sent to ${email}. If you didn't create an account, you can safely ignore this email.
+                    <br><br>
+                    © 2025 Abinexis. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
 
-const sendOTP = async (email, otp) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"🛒Abinexis" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: 'Verify Your Email',
-    text: `Your OTP for registration is ${otp}. It is valid for 10 minutes.`,
+    subject: '🔐 Verify Your Email - OTP Inside',
+    html: htmlTemplate,
+    text: `Hello ${userName}!\n\nYour OTP for registration is: ${otp}\n\nThis code is valid for 10 minutes only.\n\nFor security reasons, never share this code with anyone.\n\nIf you didn't request this verification, please ignore this email.\n\nThanks!`
   };
-  await transporter.sendMail(mailOptions);
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('OTP email sent successfully to:', email);
+  } catch (error) {
+    console.error('Error sending OTP email:', error);
+    throw error;
+  }
 };
 
 // OTP-based registration
@@ -47,7 +322,7 @@ const register = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const otp = generateOTP();
   otpStore[email] = { otp, hashedPassword, firstName, lastName, expires: Date.now() + 10 * 60 * 1000 };
-  await sendOTP(email, otp);
+  await sendOTP(email, otp,firstName);
   res.status(200).json({ message: 'OTP sent to your email. Please verify.' });
 };
 
